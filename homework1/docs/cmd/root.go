@@ -1,4 +1,4 @@
-package cli
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -10,11 +10,9 @@ var RootCmd = &cobra.Command{
 	Long:  `Simple CLI app for pick-up point using Golang Cobra`,
 }
 
-func InitRootCmd(commands ...*cobra.Command) *cobra.Command {
-	RootCmd.AddCommand(commands...)
-	return RootCmd
-}
-
 func Execute() {
 	RootCmd.Execute()
+}
+
+func init() {
 }
