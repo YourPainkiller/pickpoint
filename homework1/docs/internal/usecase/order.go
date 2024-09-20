@@ -12,17 +12,9 @@ import (
 const TIMELAYOUT = "2006-01-02"
 
 type (
-	orderWriter interface {
-		InsertOrders(data *dto.ListOrdersDto) error
-	}
-
-	orderGetter interface {
-		GetOrders() (*dto.ListOrdersDto, error)
-	}
-
 	orderRepository interface {
-		orderWriter
-		orderGetter
+		InsertOrders(data *dto.ListOrdersDto) error
+		GetOrders() (*dto.ListOrdersDto, error)
 	}
 )
 
@@ -34,15 +26,15 @@ func NewOrderUseCase(repo orderRepository) *OrderUseCase {
 	return &OrderUseCase{repo: repo}
 }
 
-func (oc *OrderUseCase) Accept(req *dto.AcceptOrderRequest) (*dto.AcceptOrderResponse, error) {
+func (oc *OrderUseCase) Accept(req *dto.AcceptOrderRequest) error {
 	ord, err := oc.repo.GetOrders()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, order := range ord.Orders {
 		if order.Id == req.Id {
-			return nil, errors.New("this order already in base")
+			return errors.New("this order already in base")
 		}
 	}
 
@@ -55,20 +47,20 @@ func (oc *OrderUseCase) Accept(req *dto.AcceptOrderRequest) (*dto.AcceptOrderRes
 	case domain.TypeStretch:
 		opackageStrategy = strategy.StretchPackageStrategy{}
 	default:
-		return nil, fmt.Errorf("unknown box type: %s", req.PackageType)
+		return fmt.Errorf("unknown box type: %s", req.PackageType)
 	}
 
 	newOrder, err := domain.NewOrder(req.Id, req.UserId, req.Price, req.Weight, req.ValidTime, "accepted", req.PackageType, opackageStrategy, req.AdditionalStretch)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	ord.Orders = append(ord.Orders, newOrder.ToDTO())
 	err = oc.repo.InsertOrders(ord)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &dto.AcceptOrderResponse{OrderDto: newOrder.ToDTO()}, nil
+	return nil
 }
 
 func (oc *OrderUseCase) AcceptReturn(req *dto.AcceptReturnOrderRequest) error {
@@ -175,7 +167,7 @@ func (oc *OrderUseCase) Return(req *dto.ReturnOrderRequest) error {
 		if order.Id == req.Id {
 			curTime := time.Now().Add(24 * time.Hour)
 			orderTime, _ := time.Parse(TIMELAYOUT, order.ValidTime)
-			if curTime.After(orderTime) || order.State == "returned" { // Проверяем что срок хранения истек или заказ был возвращен
+			if curTime.After(orderTime) || order.State == "returned" || order.State == "gived" { // Проверяем что срок хранения истек или заказ был возвращен
 				if order.State != "gived" { // Проверяем что заказ не находится у клиента
 					ord.Orders = append(ord.Orders[:k], ord.Orders[k+1:]...) //Удаляем из базы
 					err := oc.repo.InsertOrders(ord)                         // Обновляем базу

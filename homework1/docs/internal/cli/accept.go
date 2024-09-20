@@ -65,12 +65,12 @@ func initAcceptCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				AdditionalStretch: additionalStretch,
 			}
 
-			response, err := orderUseCase.Accept(request)
+			err = orderUseCase.Accept(request)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("OrderId: %d, UserId: %d, Valid time: %s (not including), Total price: %d, weight: %d, package type: %s --- succesfull accepted\n", response.Id, request.UserId, response.ValidTime, response.Price, response.Weight, response.PackageType)
+			fmt.Println("Order accepted succesful")
 			return nil
 		},
 	}
