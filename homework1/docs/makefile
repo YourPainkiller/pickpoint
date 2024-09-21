@@ -12,6 +12,9 @@ check-quality:
 lint: 
 	gocognit -over 5 . || exit 0
 	gocyclo -over 5 . || exit 0
+
+cover:
+	go test -cover ./internal/usecase
 	
 
 vet: 
@@ -44,6 +47,8 @@ depgraph-build:
 depgraph:
 	make depgraph-install
 	make depgraph-build
+
+
 
 
 
