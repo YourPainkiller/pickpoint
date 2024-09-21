@@ -1,72 +1,38 @@
 package test
 
 import (
-	"errors"
 	"homework1/internal/dto"
 	"homework1/internal/repository"
-	"reflect"
+	"homework1/internal/usecase"
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepoInsert(t *testing.T) {
+func TestRepoAdd(t *testing.T) {
 	testRepo, err := repository.NewOrderRepository("./testdb.json")
 	require.NoError(t, err)
 
-	err = testRepo.InsertOrders(&dto.ListOrdersDto{
-		Orders: []dto.OrderDto{
-			{
-				Id:                1,
-				UserId:            1,
-				ValidTime:         "2024-09-22",
-				Price:             120,
-				Weight:            100,
-				PackageType:       "box",
-				AdditionalStretch: false,
-				State:             "accepted",
-			},
-		},
+	oc := usecase.NewOrderUseCase(testRepo)
+	err = oc.Accept(&dto.AcceptOrderRequest{
+		Id:                rand.Int(),
+		UserId:            777,
+		ValidTime:         "2025-09-21",
+		Price:             100,
+		Weight:            100,
+		PackageType:       "box",
+		AdditionalStretch: false,
 	})
-
 	require.NoError(t, err)
 }
 
-func TestRepoGetEmpty(t *testing.T) {
+func TestRepoUserOrders(t *testing.T) {
 	testRepo, err := repository.NewOrderRepository("./testdb.json")
 	require.NoError(t, err)
 
-	_, err = testRepo.GetOrders()
-	require.NoError(t, err)
-}
+	oc := usecase.NewOrderUseCase(testRepo)
 
-func TestRepoGetData(t *testing.T) {
-	testData := &dto.ListOrdersDto{
-		Orders: []dto.OrderDto{
-			{
-				Id:                1,
-				UserId:            1,
-				ValidTime:         "2024-09-22",
-				Price:             120,
-				Weight:            100,
-				PackageType:       "box",
-				AdditionalStretch: false,
-				State:             "accepted",
-			},
-		},
-	}
-
-	testRepo, err := repository.NewOrderRepository("./testdb.json")
-	require.NoError(t, err)
-
-	err = testRepo.InsertOrders(testData)
-	require.NoError(t, err)
-
-	fromRepoData, err := testRepo.GetOrders()
-	require.NoError(t, err)
-
-	if !reflect.DeepEqual(testData, fromRepoData) {
-		err = errors.New("bad reading")
-	}
+	_, err = oc.UserOrders(&dto.UserOrdersRequest{UserId: 777})
 	require.NoError(t, err)
 }

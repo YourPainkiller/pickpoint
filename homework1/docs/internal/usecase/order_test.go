@@ -549,7 +549,7 @@ func TestAcceptReturn(t *testing.T) {
 
 			_, oc := tt.setup()
 			if err := oc.AcceptReturn(&tt.args.req); (err != nil) != tt.wantErr {
-				t.Errorf("Accept() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Errorf("AcceptReturn() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -1062,7 +1062,7 @@ func TestGive(t *testing.T) {
 
 			_, oc := tt.setup()
 			if err := oc.Give(&tt.args.req); (err != nil) != tt.wantErr {
-				t.Errorf("Accept() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Errorf("Give() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -1249,7 +1249,7 @@ func TestReturn(t *testing.T) {
 
 			_, oc := tt.setup()
 			if err := oc.Return(&tt.args.req); (err != nil) != tt.wantErr {
-				t.Errorf("Accept() error = %v, wantErr = %v", err, tt.wantErr)
+				t.Errorf("Return() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
 	}

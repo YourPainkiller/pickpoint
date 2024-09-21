@@ -191,7 +191,6 @@ func (oc *OrderUseCase) UserOrders(req *dto.UserOrdersRequest) (*dto.UserOrdersR
 	if err != nil {
 		return nil, err
 	}
-
 	// Поиск и сборка всех заказов от клиента с userId
 	var userOrders []dto.OrderDto
 	for _, order := range ord.Orders {
@@ -201,7 +200,7 @@ func (oc *OrderUseCase) UserOrders(req *dto.UserOrdersRequest) (*dto.UserOrdersR
 		}
 	}
 	if len(userOrders) == 0 {
-		return nil, errors.New("empty")
+		return nil, nil
 	}
 
 	if req.Last < 1 {
