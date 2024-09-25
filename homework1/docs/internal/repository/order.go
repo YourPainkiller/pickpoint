@@ -14,6 +14,8 @@ type OrderRepository struct {
 	path string
 }
 
+var ErrUnableToOpen = errors.New("unable to open database")
+
 func NewOrderRepository(path string) (*OrderRepository, error) {
 	f, err := os.OpenFile(path, os.O_CREATE, 0666)
 	if err != nil {
@@ -30,7 +32,7 @@ func (r *OrderRepository) InsertOrders(data *dto.ListOrdersDto) error {
 	}
 	jsonFile, err := os.OpenFile(r.path, os.O_CREATE, 0666)
 	if err != nil {
-		return errors.New("uanble to open database")
+		return ErrUnableToOpen
 	}
 	defer jsonFile.Close()
 
@@ -47,7 +49,7 @@ func (r *OrderRepository) InsertOrders(data *dto.ListOrdersDto) error {
 func (r *OrderRepository) GetOrders() (*dto.ListOrdersDto, error) {
 	jsonFile, err := os.OpenFile(r.path, os.O_CREATE, 0666)
 	if err != nil {
-		return &dto.ListOrdersDto{}, errors.New("uanble to open database")
+		return &dto.ListOrdersDto{}, ErrUnableToOpen
 	}
 	defer jsonFile.Close()
 

@@ -38,6 +38,11 @@ func initUserOrdersCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				return err
 			}
 
+			if response == nil {
+				fmt.Println("empty")
+				return nil
+			}
+
 			text := []string{}
 			for _, order := range response.Orders {
 				text = append(text, fmt.Sprintf("Order Id: %d, Valid untill: %s, State: %s", order.Id, order.ValidTime, order.State))
