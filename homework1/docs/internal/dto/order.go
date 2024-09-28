@@ -1,14 +1,14 @@
 package dto
 
 type OrderDto struct {
-	Id                int    `json:"orderId"`
-	UserId            int    `json:"userId"`
-	ValidTime         string `json:"validTime"`
-	State             string `json:"state"`
-	Price             int    `json:"price"`
-	Weight            int    `json:"weight"`
-	PackageType       string `json:"packageType"`
-	AdditionalStretch bool   `json:"additionalStretch"`
+	Id                int    `json:"orderId" db:"order_id" fake:"skip"`
+	UserId            int    `json:"userId" db:"user_id" fake:"{number:1,10000}"`
+	ValidTime         string `json:"validTime" db:"valid_time" fake:"skip"`
+	State             string `json:"state" db:"order_state" fake:"{randomstring:[accepted, gived, returned, deleted]}"`
+	Price             int    `json:"price" db:"price" fake:"{number:1,10000}"`
+	Weight            int    `json:"weight" db:"weight" fake:"{number:1,10000}"`
+	PackageType       string `json:"packageType" db:"package" fake:"{randomstring:[box, bag, stretch]}"`
+	AdditionalStretch bool   `json:"additionalStretch" db:"additional_stretch" fake:"skip"`
 }
 
 type ListOrdersDto struct {

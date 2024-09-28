@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"homework1/internal/dto"
 	"homework1/internal/usecase"
@@ -39,7 +40,8 @@ func initUserReturnsCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				Size: pageSize,
 			}
 
-			response, err := orderUseCase.UserReturns(request)
+			ctx := context.Background()
+			response, err := orderUseCase.UserReturns(ctx, request)
 			if err != nil {
 				return err
 			}

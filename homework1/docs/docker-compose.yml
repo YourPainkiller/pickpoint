@@ -1,0 +1,28 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=qwe
+    container_name: postgres_db
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    
+  postgresFake:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=postgresFake
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=qwe
+    container_name: postgresFake_db
+    volumes:
+      - ./pgdataFake:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: always
