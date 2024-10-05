@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"homework1/internal/dto"
 	"homework1/internal/usecase"
+	"homework1/internal/workerPool"
 
 	"github.com/spf13/cobra"
 )
 
-func initReturnCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
+func initReturnCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *cobra.Command {
 	// Команда для возрвата заказа обратно курьеру. Обязательный флаг OrderId
 	var ReturnCmd = &cobra.Command{
 		Use:     "return",
@@ -23,16 +24,29 @@ func initReturnCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				return err
 			}
 
+			slow, err := cmd.Flags().GetBool("slow")
+			if err != nil {
+				return err
+			}
+
 			request := &dto.ReturnOrderRequest{
 				Id: orderId,
 			}
 
 			ctx := context.Background()
-			err = orderUseCase.Return(ctx, request)
-			if err != nil {
-				return err
+			pool.SubmitTask(func() {
+				err := orderUseCase.Return(ctx, request)
+				if err != nil {
+					err = fmt.Errorf("error in returning order with orderid=%d: %v", request.Id, err)
+					fmt.Println(err)
+				} else {
+					fmt.Println("Order succesfull returned to courier")
+				}
+			})
+			if slow {
+				pool.GetTasksWg().Wait()
 			}
-			fmt.Println("Order succesfull returned to courier")
+
 			return nil
 		},
 	}

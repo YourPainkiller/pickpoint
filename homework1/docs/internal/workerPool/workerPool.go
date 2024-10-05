@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 )
 
+// Структура воркер пула. Некоторые поля полноценно не используются, но я подумал что они могут быть полезными в будущем
 type Pool struct {
 	workerCount         int32
 	waitingTaskCount    int32
@@ -22,6 +23,7 @@ type Pool struct {
 	quit  chan struct{}
 }
 
+// Создание нового пула
 func NewPool(maxWorkers, maxTasks int) *Pool {
 	pool := &Pool{
 		maxWorkers: maxWorkers,
@@ -49,13 +51,22 @@ func (p *Pool) GetWorkersWg() *sync.WaitGroup {
 	return &p.workersWg
 }
 
-func (p *Pool) CreateWorker(id int) {
+func (p *Pool) GetCurrentWorkers() int32 {
+	return atomic.LoadInt32(&p.workerCount)
+}
+
+func (p *Pool) GetMaxWorkers() int {
+	return p.maxWorkers
+}
+
+// Создание воркера
+func (p *Pool) CreateWorker() {
 	totalWorkers := atomic.LoadInt32(&p.workerCount)
 	if totalWorkers >= int32(p.maxWorkers) {
-		fmt.Print("Can't create new worker, because maxWorkers reached")
+		//fmt.Print("Can't create new worker, because maxWorkers reached\n")
 		return
 	}
-
+	id := totalWorkers + 1
 	atomic.AddInt32(&p.workerCount, 1)
 	atomic.AddInt32(&p.freeWorkerCount, 1)
 	fmt.Printf("starting worker%d\n", id)
@@ -63,7 +74,7 @@ func (p *Pool) CreateWorker(id int) {
 	for {
 		select {
 		case task := <-p.tasks:
-			fmt.Printf("Worker%d: ", id)
+			//fmt.Printf("Worker%d: ", id)
 			p.startTask()
 			task()
 			p.endTask()
@@ -72,17 +83,21 @@ func (p *Pool) CreateWorker(id int) {
 			p.workersWg.Done()
 			atomic.AddInt32(&p.workerCount, -1)
 			atomic.AddInt32(&p.freeWorkerCount, -1)
+			fmt.Printf("worker%d deleted\n", id)
 			return
 		}
 	}
 }
 
+// Добавление задачи в воркер пул
 func (p *Pool) SubmitTask(task func()) {
 	p.tasksWg.Add(1)
 	p.tasks <- task
 }
 
+// Выключение воркера
 func (p *Pool) StopWorker() {
+	p.workersWg.Add(1)
 	p.quit <- struct{}{}
 }
 

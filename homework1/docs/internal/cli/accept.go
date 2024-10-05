@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"homework1/internal/dto"
 	"homework1/internal/usecase"
+	"homework1/internal/workerPool"
 
 	"github.com/spf13/cobra"
 )
 
 const TIMELAYOUT = "2006-01-02"
 
-func initAcceptCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
+func initAcceptCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *cobra.Command {
 	// Команда для приема заказов от курьера. Обязательные флаги OrderId, UserId и ValidTime
 	var AcceptCmd = &cobra.Command{
 		Use:     "accept",
@@ -56,6 +57,11 @@ func initAcceptCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				return err
 			}
 
+			slow, err := cmd.Flags().GetBool("slow")
+			if err != nil {
+				return err
+			}
+
 			request := &dto.AcceptOrderRequest{
 				Id:                orderId,
 				UserId:            userId,
@@ -67,12 +73,20 @@ func initAcceptCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 			}
 
 			ctx := context.Background()
-			err = orderUseCase.Accept(ctx, request)
-			if err != nil {
-				return err
+			pool.SubmitTask(func() {
+				err := orderUseCase.Accept(ctx, request)
+				//time.Sleep(5 * time.Second) testing gracefull shutdown
+				if err != nil {
+					err = fmt.Errorf("error in accpeting order with id=%d: %v", request.Id, err)
+					fmt.Println(err)
+				} else {
+					fmt.Printf("Order with id=%d accepted\n", request.Id)
+				}
+			})
+			if slow {
+				pool.GetTasksWg().Wait()
 			}
 
-			fmt.Println("Order accepted succesful")
 			return nil
 		},
 	}
