@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"homework1/internal/dto"
 	"homework1/internal/usecase"
@@ -65,7 +66,8 @@ func initAcceptCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				AdditionalStretch: additionalStretch,
 			}
 
-			err = orderUseCase.Accept(request)
+			ctx := context.Background()
+			err = orderUseCase.Accept(ctx, request)
 			if err != nil {
 				return err
 			}

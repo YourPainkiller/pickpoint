@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"homework1/internal/dto"
 	"homework1/internal/usecase/mock"
 	"testing"
@@ -259,9 +260,9 @@ func TestAcceptWithEmptyBase(t *testing.T) {
 		tt := itt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
+			ctx := context.Background()
 			_, oc := tt.setup()
-			if err := oc.Accept(&tt.args.req); (err != nil) != tt.wantErr {
+			if err := oc.Accept(ctx, &tt.args.req); (err != nil) != tt.wantErr {
 				t.Errorf("Accept() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
@@ -546,9 +547,9 @@ func TestAcceptReturn(t *testing.T) {
 		tt := tti
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
+			ctx := context.Background()
 			_, oc := tt.setup()
-			if err := oc.AcceptReturn(&tt.args.req); (err != nil) != tt.wantErr {
+			if err := oc.AcceptReturn(ctx, &tt.args.req); (err != nil) != tt.wantErr {
 				t.Errorf("AcceptReturn() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
@@ -1060,8 +1061,9 @@ func TestGive(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx := context.Background()
 			_, oc := tt.setup()
-			if err := oc.Give(&tt.args.req); (err != nil) != tt.wantErr {
+			if err := oc.Give(ctx, &tt.args.req); (err != nil) != tt.wantErr {
 				t.Errorf("Give() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})
@@ -1247,8 +1249,9 @@ func TestReturn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx := context.Background()
 			_, oc := tt.setup()
-			if err := oc.Return(&tt.args.req); (err != nil) != tt.wantErr {
+			if err := oc.Return(ctx, &tt.args.req); (err != nil) != tt.wantErr {
 				t.Errorf("Return() error = %v, wantErr = %v", err, tt.wantErr)
 			}
 		})

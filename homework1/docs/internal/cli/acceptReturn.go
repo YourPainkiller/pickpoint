@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"homework1/internal/dto"
 	"homework1/internal/usecase"
@@ -14,7 +15,7 @@ func initAcceptReturnCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 		Use:     "acceptReturn",
 		Short:   "Accept return from client",
 		Long:    `With this command you can try to recieve return from client.`,
-		Example: "acceptReturn --ui=1 --oi==15",
+		Example: "acceptReturn --ui=1 --oi=15",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Парсинг и обработка флагов
 			orderId, err := cmd.Flags().GetInt("oi")
@@ -32,7 +33,8 @@ func initAcceptReturnCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				UserId: userId,
 			}
 
-			err = orderUseCase.AcceptReturn(request)
+			ctx := context.Background()
+			err = orderUseCase.AcceptReturn(ctx, request)
 			if err != nil {
 				return err
 			}

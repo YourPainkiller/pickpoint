@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"homework1/internal/dto"
 	"homework1/internal/usecase"
@@ -33,7 +34,8 @@ func initUserOrdersCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				Last:   last,
 			}
 
-			response, err := orderUseCase.UserOrders(request)
+			ctx := context.Background()
+			response, err := orderUseCase.UserOrders(ctx, request)
 			if err != nil {
 				return err
 			}
