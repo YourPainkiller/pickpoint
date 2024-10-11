@@ -31,6 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	orderUseCase := usecase.NewOrderUseCase(orderRepository, storageFacade)
 
 	cli.Run(*orderUseCase)
