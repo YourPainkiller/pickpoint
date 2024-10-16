@@ -4,19 +4,32 @@ import (
 	"context"
 	"homework1/internal/cli"
 	"homework1/internal/dto"
+	"homework1/internal/mw"
 	"homework1/internal/repository"
 	"homework1/internal/repository/postgres"
 	"homework1/internal/usecase"
+	cliserver "homework1/pkg/cli/v1"
 	"log"
 	"math/rand"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
+)
+
+const (
+	psqlDSN  = "postgres://postgres:qwe@localhost:5432/postgres?sslmode=disable"
+	grpcHost = "localhost:7001"
+	httpHost = "localhost:7002"
 )
 
 func main() {
-	const psqlDSN = "postgres://postgres:qwe@localhost:5432/postgres?sslmode=disable"
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, psqlDSN)
 	if err != nil {
@@ -34,7 +47,37 @@ func main() {
 
 	orderUseCase := usecase.NewOrderUseCase(orderRepository, storageFacade)
 
-	cli.Run(*orderUseCase)
+	lis, err := net.Listen("tcp", grpcHost)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(mw.Logging),
+	)
+	reflection.Register(grpcServer)
+	cliserver.RegisterCliServer(grpcServer, orderUseCase)
+
+	mux := runtime.NewServeMux()
+	err = cliserver.RegisterCliHandlerFromEndpoint(ctx, mux, grpcHost, []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("all good")
+
+	go func() {
+		if err := http.ListenAndServe(httpHost, mux); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatal(err)
+	}
+
+	//cli.Run(*orderUseCase)
 }
 
 func newStorage(pool *pgxpool.Pool) repository.Facade {

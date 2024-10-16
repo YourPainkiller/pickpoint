@@ -8,7 +8,13 @@ import (
 	"homework1/internal/domain/strategy"
 	"homework1/internal/dto"
 	"homework1/internal/repository"
+	"homework1/internal/repository/postgres"
+	cliserver "homework1/pkg/cli/v1"
+	"log"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const TIMELAYOUT = "2006-01-02"
@@ -23,6 +29,7 @@ type (
 type OrderUseCase struct {
 	repo           orderRepository
 	psqlRepoFacade repository.Facade
+	cliserver.UnimplementedCliServer
 }
 
 func NewOrderUseCase(repo orderRepository, psqlRepoFacade repository.Facade) *OrderUseCase {
@@ -53,6 +60,41 @@ func (oc *OrderUseCase) Accept(ctx context.Context, req *dto.AcceptOrderRequest)
 	}
 
 	return nil
+}
+
+func (oc *OrderUseCase) AcceptOrder(ctx context.Context, req *cliserver.AcceptOrderRequest) (*cliserver.AcceptOrderResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	var opackageStrategy strategy.OrderPackageStrategy
+	switch req.PackageType {
+	case domain.TypeBox:
+		opackageStrategy = strategy.BoxPackageStrategy{}
+	case domain.TypeBag:
+		opackageStrategy = strategy.BagPackageStrategy{}
+	case domain.TypeStretch:
+		opackageStrategy = strategy.StretchPackageStrategy{}
+	default:
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("unknown box type: %s", req.PackageType))
+	}
+
+	newOrder, err := domain.NewOrder(int(req.GetId()), int(req.GetUserId()), int(req.GetPrice()), int(req.GetWeight()), req.GetValidTime(), "accepted", req.GetPackageType(), opackageStrategy, req.GetAdditionalStretch())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	err = oc.psqlRepoFacade.AddOrder(ctx, newOrder.ToDTO())
+	if err != nil {
+		switch {
+		case errors.Is(err, postgres.ErrAlreadyInBase):
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		default:
+			log.Println(err.Error())
+			return nil, status.Error(codes.Internal, "Unkown Error")
+		}
+	}
+	return &cliserver.AcceptOrderResponse{}, nil
 }
 
 func (oc *OrderUseCase) AcceptReturn(ctx context.Context, req *dto.AcceptReturnOrderRequest) error {

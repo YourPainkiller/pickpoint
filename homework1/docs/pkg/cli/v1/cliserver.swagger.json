@@ -1,0 +1,162 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "cli/v1/cliserver.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "cli"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/AcceptOrder": {
+      "post": {
+        "operationId": "cli_AcceptOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cliserverAcceptOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cliserverAcceptOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "cli"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "cliserverAcceptOrderRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "userId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "validTime": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "int64"
+        },
+        "weight": {
+          "type": "string",
+          "format": "int64"
+        },
+        "packageType": {
+          "type": "string"
+        },
+        "additionalStretch": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "validTime",
+        "price",
+        "weight",
+        "packageType",
+        "additionalStretch"
+      ]
+    },
+    "cliserverAcceptOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/cliserverOrderDto"
+        }
+      }
+    },
+    "cliserverOrderDto": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "userId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "validTime": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string",
+          "format": "int64"
+        },
+        "weight": {
+          "type": "string",
+          "format": "int64"
+        },
+        "packageType": {
+          "type": "string"
+        },
+        "additionalStretch": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

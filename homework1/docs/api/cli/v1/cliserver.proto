@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package cliserver;
+
+option go_package = "homework1/docs/pkg/cliserver;cliserver";
+
+import "validate/validate.proto";
+import "google/protobuf/wrappers.proto"; 
+import "google/api/field_behavior.proto";
+import "google/api/annotations.proto";
+
+service cli {
+    rpc AcceptOrder(AcceptOrderRequest) returns (AcceptOrderResponse){
+        option (google.api.http) = {
+            post: "/AcceptOrder"
+            body: "*"
+        };
+    }
+}
+
+message OrderDto {
+    int64 id = 1; 
+    int64 userId = 2;
+    string validTime = 3;
+    string state = 4;
+    int64 price = 5;
+    int64 weight = 6;
+    string packageType = 7;
+    bool additionalStretch = 8;
+}
+
+message AcceptOrderRequest{
+    int64 id = 1 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    int64 userId = 2 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    string validTime = 3 [
+        (validate.rules).string = {
+            min_len: 10,
+            max_len: 10
+        }, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    int64 price = 4 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    int64 weight = 5 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    string packageType = 6 [
+        (validate.rules).string = {
+            min_len: 3,
+            max_len: 6
+        }, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    bool additionalStretch = 7 [
+        (google.api.field_behavior) = REQUIRED
+    ];
+}
+
+message AcceptOrderResponse {
+    OrderDto order = 1;
+}

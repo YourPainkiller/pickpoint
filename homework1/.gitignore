@@ -1,2 +1,4 @@
-./docs/pgdata/
-./docs/pgdataFake/
+**/docs/pgdata/
+**/docs/pgdataFake/
+**/docs/bin/
+**/docs/vendor.protogen/
