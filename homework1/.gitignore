@@ -2,3 +2,4 @@
 **/docs/pgdataFake/
 **/docs/bin/
 **/docs/vendor.protogen/
+*.exe

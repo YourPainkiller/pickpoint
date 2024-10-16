@@ -3,8 +3,8 @@ package cli
 import (
 	"bufio"
 	"fmt"
-	"homework1/internal/usecase"
 	"homework1/internal/workerPool"
+	cliserver "homework1/pkg/cli/v1"
 	"os"
 	"os/signal"
 	"strings"
@@ -70,7 +70,7 @@ func flagsReset(acceptCmd, acceptReturn, giveCmd, returnCmd, userOrdersCmd, user
 	changeCmd.MarkFlagRequired("delta")
 }
 
-func Run(orderUseCase usecase.OrderUseCase) {
+func Run(cliclient cliserver.CliClient) {
 	//Создаем пул и добавляем в него 5 воркеров
 	pool := workerPool.NewPool(MAXWORKERS, MAXTASKS)
 	for i := 0; i < 5; i++ {
@@ -80,13 +80,13 @@ func Run(orderUseCase usecase.OrderUseCase) {
 	chSig := make(chan os.Signal, 1)
 	signal.Notify(chSig, syscall.SIGINT, syscall.SIGTERM)
 
-	acceptCmd := initAcceptCmd(orderUseCase, pool)
-	acceptReturn := initAcceptReturnCmd(orderUseCase, pool)
+	acceptCmd := initAcceptCmd(cliclient, pool)
+	acceptReturn := initAcceptReturnCmd(cliclient, pool)
 	exitCmd := initExitCmd()
-	giveCmd := initGiveCmd(orderUseCase, pool)
-	returnCmd := initReturnCmd(orderUseCase, pool)
-	userOrdersCmd := initUserOrdersCmd(orderUseCase)
-	userReturnsCmd := initUserReturnsCmd(orderUseCase)
+	giveCmd := initGiveCmd(cliclient, pool)
+	returnCmd := initReturnCmd(cliclient, pool)
+	userOrdersCmd := initUserOrdersCmd(cliclient)
+	userReturnsCmd := initUserReturnsCmd(cliclient)
 	changeCmd := initChangeCmd(pool)
 	RootCmd = InitRootCmd(acceptCmd, acceptReturn, exitCmd, giveCmd, returnCmd, userOrdersCmd, userReturnsCmd, changeCmd)
 

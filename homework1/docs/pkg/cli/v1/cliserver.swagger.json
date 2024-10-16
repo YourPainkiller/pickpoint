@@ -1,13 +1,18 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "cli/v1/cliserver.proto",
-    "version": "version not set"
+    "title": "Менджер пункта выдачи",
+    "description": "Сервис выполняет функции приема, выдачи, возврата и получения информации по актуальным заказам",
+    "version": "1.0.0"
   },
   "tags": [
     {
       "name": "cli"
     }
+  ],
+  "host": "localhost:7002",
+  "schemes": [
+    "http"
   ],
   "consumes": [
     "application/json"
@@ -18,7 +23,9 @@
   "paths": {
     "/AcceptOrder": {
       "post": {
-        "operationId": "cli_AcceptOrder",
+        "summary": "Принятие заказа от курьра в пункт выдачи",
+        "description": "Принимает идентификатор заказа, пользователя, срок хранения, цену, вес, тип упаковки и нужна ли дополнительная упаковка",
+        "operationId": "cli_AcceptOrderGrpc",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -41,6 +48,208 @@
             "schema": {
               "$ref": "#/definitions/cliserverAcceptOrderRequest"
             }
+          }
+        ],
+        "tags": [
+          "cli"
+        ],
+        "security": [
+          {
+            "api-token": []
+          }
+        ]
+      }
+    },
+    "/AcceptReturn": {
+      "post": {
+        "summary": "Принять возврат у клиента",
+        "description": "Принимает идентификатор заказа и пользователя",
+        "operationId": "cli_AcceptReturnGrpc",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cliserverAcceptReturnResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cliserverAcceptReturnRequest"
+            }
+          }
+        ],
+        "tags": [
+          "cli"
+        ],
+        "security": [
+          {
+            "api-token": []
+          }
+        ]
+      }
+    },
+    "/GiveOrder": {
+      "post": {
+        "summary": "Выдача заказов клиенту",
+        "description": "Принимает список идентификаторов заказов",
+        "operationId": "cli_GiveOrderGrpc",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cliserverGiveOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cliserverGiveOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "cli"
+        ],
+        "security": [
+          {
+            "api-token": []
+          }
+        ]
+      }
+    },
+    "/ReturnOrder": {
+      "post": {
+        "summary": "Выдача заказа курьеру",
+        "description": "Возвращает заказ с указанным идентификатором обратно курьеру",
+        "operationId": "cli_ReturnOrderGrpc",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cliserverReturnOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/cliserverReturnOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "cli"
+        ],
+        "security": [
+          {
+            "api-token": []
+          }
+        ]
+      }
+    },
+    "/UserOrders": {
+      "get": {
+        "summary": "Показывает актуальные заказы пользователя",
+        "description": "Принимает идентификатор пользователя и опционально количество последних заказов, которые требуется вывести",
+        "operationId": "cli_UserOrdersGrpc",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cliserverUserOrdersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "last",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "cli"
+        ]
+      }
+    },
+    "/UserReturns": {
+      "get": {
+        "summary": "Показывает все заказы, которые были возвращены в пункт выдачи",
+        "description": "Принимает страницу и опционально размер страницы для паганиции",
+        "operationId": "cli_UserReturnsGrpc",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/cliserverUserReturnsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -90,12 +299,42 @@
       ]
     },
     "cliserverAcceptOrderResponse": {
+      "type": "object"
+    },
+    "cliserverAcceptReturnRequest": {
       "type": "object",
       "properties": {
-        "order": {
-          "$ref": "#/definitions/cliserverOrderDto"
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "userId": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    },
+    "cliserverAcceptReturnResponse": {
+      "type": "object"
+    },
+    "cliserverGiveOrderRequest": {
+      "type": "object",
+      "properties": {
+        "orderIds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cliserverOrderId"
+          }
         }
       }
+    },
+    "cliserverGiveOrderResponse": {
+      "type": "object"
     },
     "cliserverOrderDto": {
       "type": "object",
@@ -130,6 +369,57 @@
         }
       }
     },
+    "cliserverOrderId": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "cliserverReturnOrderRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "cliserverReturnOrderResponse": {
+      "type": "object"
+    },
+    "cliserverUserOrdersResponse": {
+      "type": "object",
+      "properties": {
+        "orderDtos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cliserverOrderDto"
+          }
+        }
+      }
+    },
+    "cliserverUserReturnsResponse": {
+      "type": "object",
+      "properties": {
+        "orderDtos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/cliserverOrderDto"
+          }
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -157,6 +447,14 @@
           }
         }
       }
+    }
+  },
+  "securityDefinitions": {
+    "api-token": {
+      "type": "apiKey",
+      "description": "Авторизационный токен",
+      "name": "x-api-token",
+      "in": "header"
     }
   }
 }

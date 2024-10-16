@@ -2,15 +2,17 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"homework1/internal/dto"
-	"homework1/internal/usecase"
+	cliserver "homework1/pkg/cli/v1"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func initUserReturnsCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
+func initUserReturnsCmd(cliclient cliserver.CliClient) *cobra.Command {
 	// Команда для вывода возвратов клиента с постраничной пагинацией. Обязательный флаг page --- номер страницы для вывода
 	// Опциаональный флаг size --- размер одной страницы
 	var userReturnsCmd = &cobra.Command{
@@ -39,15 +41,29 @@ func initUserReturnsCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				Page: page,
 				Size: pageSize,
 			}
-
-			ctx := context.Background()
-			response, err := orderUseCase.UserReturns(ctx, request)
+			byteReq, err := json.Marshal(request)
 			if err != nil {
 				return err
 			}
 
+			grpcReq := &cliserver.UserReturnsRequest{}
+			if err := protojson.Unmarshal(byteReq, grpcReq); err != nil {
+				return err
+			}
+
+			ctx := context.Background()
+			resp, respErr := cliclient.UserReturnsGrpc(ctx, grpcReq)
+			if respErr != nil {
+				return err
+			}
+
+			if resp == nil {
+				fmt.Println("empty")
+				return nil
+			}
+
 			output := []string{}
-			for _, order := range response.Orders {
+			for _, order := range resp.OrderDtos {
 				output = append(output, fmt.Sprintf("Order Id: %d, User Id: %d", order.Id, order.UserId))
 			}
 

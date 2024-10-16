@@ -1,7 +1,7 @@
 package dto
 
 type OrderDto struct {
-	Id                int    `json:"orderId" db:"order_id" fake:"skip"`
+	Id                int    `json:"id" db:"order_id" fake:"skip"`
 	UserId            int    `json:"userId" db:"user_id" fake:"{number:1,10000}"`
 	ValidTime         string `json:"validTime" db:"valid_time" fake:"skip"`
 	State             string `json:"state" db:"order_state" fake:"{randomstring:[accepted, gived, returned, deleted]}"`
@@ -12,11 +12,11 @@ type OrderDto struct {
 }
 
 type ListOrdersDto struct {
-	Orders []OrderDto `json:"orders"`
+	Orders []OrderDto `json:"orderDtos"`
 }
 
 type AcceptOrderRequest struct {
-	Id                int    `json:"orderId"`
+	Id                int    `json:"id"`
 	UserId            int    `json:"userId"`
 	ValidTime         string `json:"validTime"`
 	Price             int    `json:"price"`

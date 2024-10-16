@@ -19,14 +19,24 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Cli_AcceptOrder_FullMethodName = "/cliserver.cli/AcceptOrder"
+	Cli_AcceptOrderGrpc_FullMethodName  = "/cliserver.cli/AcceptOrderGrpc"
+	Cli_AcceptReturnGrpc_FullMethodName = "/cliserver.cli/AcceptReturnGrpc"
+	Cli_GiveOrderGrpc_FullMethodName    = "/cliserver.cli/GiveOrderGrpc"
+	Cli_ReturnOrderGrpc_FullMethodName  = "/cliserver.cli/ReturnOrderGrpc"
+	Cli_UserOrdersGrpc_FullMethodName   = "/cliserver.cli/UserOrdersGrpc"
+	Cli_UserReturnsGrpc_FullMethodName  = "/cliserver.cli/UserReturnsGrpc"
 )
 
 // CliClient is the client API for Cli service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CliClient interface {
-	AcceptOrder(ctx context.Context, in *AcceptOrderRequest, opts ...grpc.CallOption) (*AcceptOrderResponse, error)
+	AcceptOrderGrpc(ctx context.Context, in *AcceptOrderRequest, opts ...grpc.CallOption) (*AcceptOrderResponse, error)
+	AcceptReturnGrpc(ctx context.Context, in *AcceptReturnRequest, opts ...grpc.CallOption) (*AcceptReturnResponse, error)
+	GiveOrderGrpc(ctx context.Context, in *GiveOrderRequest, opts ...grpc.CallOption) (*GiveOrderResponse, error)
+	ReturnOrderGrpc(ctx context.Context, in *ReturnOrderRequest, opts ...grpc.CallOption) (*ReturnOrderResponse, error)
+	UserOrdersGrpc(ctx context.Context, in *UserOrdersRequest, opts ...grpc.CallOption) (*UserOrdersResponse, error)
+	UserReturnsGrpc(ctx context.Context, in *UserReturnsRequest, opts ...grpc.CallOption) (*UserReturnsResponse, error)
 }
 
 type cliClient struct {
@@ -37,10 +47,60 @@ func NewCliClient(cc grpc.ClientConnInterface) CliClient {
 	return &cliClient{cc}
 }
 
-func (c *cliClient) AcceptOrder(ctx context.Context, in *AcceptOrderRequest, opts ...grpc.CallOption) (*AcceptOrderResponse, error) {
+func (c *cliClient) AcceptOrderGrpc(ctx context.Context, in *AcceptOrderRequest, opts ...grpc.CallOption) (*AcceptOrderResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AcceptOrderResponse)
-	err := c.cc.Invoke(ctx, Cli_AcceptOrder_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Cli_AcceptOrderGrpc_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cliClient) AcceptReturnGrpc(ctx context.Context, in *AcceptReturnRequest, opts ...grpc.CallOption) (*AcceptReturnResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AcceptReturnResponse)
+	err := c.cc.Invoke(ctx, Cli_AcceptReturnGrpc_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cliClient) GiveOrderGrpc(ctx context.Context, in *GiveOrderRequest, opts ...grpc.CallOption) (*GiveOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GiveOrderResponse)
+	err := c.cc.Invoke(ctx, Cli_GiveOrderGrpc_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cliClient) ReturnOrderGrpc(ctx context.Context, in *ReturnOrderRequest, opts ...grpc.CallOption) (*ReturnOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReturnOrderResponse)
+	err := c.cc.Invoke(ctx, Cli_ReturnOrderGrpc_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cliClient) UserOrdersGrpc(ctx context.Context, in *UserOrdersRequest, opts ...grpc.CallOption) (*UserOrdersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserOrdersResponse)
+	err := c.cc.Invoke(ctx, Cli_UserOrdersGrpc_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cliClient) UserReturnsGrpc(ctx context.Context, in *UserReturnsRequest, opts ...grpc.CallOption) (*UserReturnsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserReturnsResponse)
+	err := c.cc.Invoke(ctx, Cli_UserReturnsGrpc_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +111,12 @@ func (c *cliClient) AcceptOrder(ctx context.Context, in *AcceptOrderRequest, opt
 // All implementations must embed UnimplementedCliServer
 // for forward compatibility.
 type CliServer interface {
-	AcceptOrder(context.Context, *AcceptOrderRequest) (*AcceptOrderResponse, error)
+	AcceptOrderGrpc(context.Context, *AcceptOrderRequest) (*AcceptOrderResponse, error)
+	AcceptReturnGrpc(context.Context, *AcceptReturnRequest) (*AcceptReturnResponse, error)
+	GiveOrderGrpc(context.Context, *GiveOrderRequest) (*GiveOrderResponse, error)
+	ReturnOrderGrpc(context.Context, *ReturnOrderRequest) (*ReturnOrderResponse, error)
+	UserOrdersGrpc(context.Context, *UserOrdersRequest) (*UserOrdersResponse, error)
+	UserReturnsGrpc(context.Context, *UserReturnsRequest) (*UserReturnsResponse, error)
 	mustEmbedUnimplementedCliServer()
 }
 
@@ -62,8 +127,23 @@ type CliServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCliServer struct{}
 
-func (UnimplementedCliServer) AcceptOrder(context.Context, *AcceptOrderRequest) (*AcceptOrderResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AcceptOrder not implemented")
+func (UnimplementedCliServer) AcceptOrderGrpc(context.Context, *AcceptOrderRequest) (*AcceptOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcceptOrderGrpc not implemented")
+}
+func (UnimplementedCliServer) AcceptReturnGrpc(context.Context, *AcceptReturnRequest) (*AcceptReturnResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcceptReturnGrpc not implemented")
+}
+func (UnimplementedCliServer) GiveOrderGrpc(context.Context, *GiveOrderRequest) (*GiveOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GiveOrderGrpc not implemented")
+}
+func (UnimplementedCliServer) ReturnOrderGrpc(context.Context, *ReturnOrderRequest) (*ReturnOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReturnOrderGrpc not implemented")
+}
+func (UnimplementedCliServer) UserOrdersGrpc(context.Context, *UserOrdersRequest) (*UserOrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserOrdersGrpc not implemented")
+}
+func (UnimplementedCliServer) UserReturnsGrpc(context.Context, *UserReturnsRequest) (*UserReturnsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserReturnsGrpc not implemented")
 }
 func (UnimplementedCliServer) mustEmbedUnimplementedCliServer() {}
 func (UnimplementedCliServer) testEmbeddedByValue()             {}
@@ -86,20 +166,110 @@ func RegisterCliServer(s grpc.ServiceRegistrar, srv CliServer) {
 	s.RegisterService(&Cli_ServiceDesc, srv)
 }
 
-func _Cli_AcceptOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Cli_AcceptOrderGrpc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AcceptOrderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CliServer).AcceptOrder(ctx, in)
+		return srv.(CliServer).AcceptOrderGrpc(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Cli_AcceptOrder_FullMethodName,
+		FullMethod: Cli_AcceptOrderGrpc_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CliServer).AcceptOrder(ctx, req.(*AcceptOrderRequest))
+		return srv.(CliServer).AcceptOrderGrpc(ctx, req.(*AcceptOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cli_AcceptReturnGrpc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcceptReturnRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CliServer).AcceptReturnGrpc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cli_AcceptReturnGrpc_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CliServer).AcceptReturnGrpc(ctx, req.(*AcceptReturnRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cli_GiveOrderGrpc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GiveOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CliServer).GiveOrderGrpc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cli_GiveOrderGrpc_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CliServer).GiveOrderGrpc(ctx, req.(*GiveOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cli_ReturnOrderGrpc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReturnOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CliServer).ReturnOrderGrpc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cli_ReturnOrderGrpc_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CliServer).ReturnOrderGrpc(ctx, req.(*ReturnOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cli_UserOrdersGrpc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CliServer).UserOrdersGrpc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cli_UserOrdersGrpc_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CliServer).UserOrdersGrpc(ctx, req.(*UserOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Cli_UserReturnsGrpc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserReturnsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CliServer).UserReturnsGrpc(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Cli_UserReturnsGrpc_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CliServer).UserReturnsGrpc(ctx, req.(*UserReturnsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +282,28 @@ var Cli_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CliServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AcceptOrder",
-			Handler:    _Cli_AcceptOrder_Handler,
+			MethodName: "AcceptOrderGrpc",
+			Handler:    _Cli_AcceptOrderGrpc_Handler,
+		},
+		{
+			MethodName: "AcceptReturnGrpc",
+			Handler:    _Cli_AcceptReturnGrpc_Handler,
+		},
+		{
+			MethodName: "GiveOrderGrpc",
+			Handler:    _Cli_GiveOrderGrpc_Handler,
+		},
+		{
+			MethodName: "ReturnOrderGrpc",
+			Handler:    _Cli_ReturnOrderGrpc_Handler,
+		},
+		{
+			MethodName: "UserOrdersGrpc",
+			Handler:    _Cli_UserOrdersGrpc_Handler,
+		},
+		{
+			MethodName: "UserReturnsGrpc",
+			Handler:    _Cli_UserReturnsGrpc_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

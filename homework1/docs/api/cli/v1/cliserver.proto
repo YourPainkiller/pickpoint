@@ -8,12 +8,117 @@ import "validate/validate.proto";
 import "google/protobuf/wrappers.proto"; 
 import "google/api/field_behavior.proto";
 import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+    info: {
+      title: "Менджер пункта выдачи";
+      version: "1.0.0";
+      description: "Сервис выполняет функции приема, выдачи, возврата и получения информации по актуальным заказам";
+    };
+    host: "localhost:7002";
+    schemes: HTTP;
+    consumes: "application/json";
+    produces: "application/json";
+    security_definitions: {
+      security: {
+        key: "api-token",
+        value: {
+          in: IN_HEADER;
+          type: TYPE_API_KEY;
+          name: "x-api-token";
+          description: "Авторизационный токен";
+        }
+      };
+    };
+};
+  
 service cli {
-    rpc AcceptOrder(AcceptOrderRequest) returns (AcceptOrderResponse){
+    rpc AcceptOrderGrpc(AcceptOrderRequest) returns (AcceptOrderResponse){
         option (google.api.http) = {
             post: "/AcceptOrder"
             body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Принятие заказа от курьра в пункт выдачи";
+            description: "Принимает идентификатор заказа, пользователя, срок хранения, цену, вес, тип упаковки и нужна ли дополнительная упаковка";
+            security: {
+                security_requirement: {
+                  key: "api-token";
+                  value: {};
+                };
+            };        
+        };
+    }
+
+    rpc AcceptReturnGrpc(AcceptReturnRequest) returns (AcceptReturnResponse){
+        option (google.api.http) = {
+            post: "/AcceptReturn"
+            body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Принять возврат у клиента";
+            description: "Принимает идентификатор заказа и пользователя";
+            security: {
+                security_requirement: {
+                  key: "api-token";
+                  value: {};
+                };
+            };        
+        };
+    }
+
+    rpc GiveOrderGrpc(GiveOrderRequest) returns (GiveOrderResponse){
+        option (google.api.http) = {
+            post: "/GiveOrder"
+            body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Выдача заказов клиенту";
+            description: "Принимает список идентификаторов заказов";
+            security: {
+                security_requirement: {
+                  key: "api-token";
+                  value: {};
+                };
+            };        
+        };
+    }
+
+    rpc ReturnOrderGrpc(ReturnOrderRequest) returns (ReturnOrderResponse){
+        option (google.api.http) = {
+            post: "/ReturnOrder"
+            body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Выдача заказа курьеру";
+            description: "Возвращает заказ с указанным идентификатором обратно курьеру";
+            security: {
+                security_requirement: {
+                  key: "api-token";
+                  value: {};
+                };
+            };
+        };
+    }
+
+    rpc UserOrdersGrpc(UserOrdersRequest) returns (UserOrdersResponse){
+        option (google.api.http) = {
+            get: "/UserOrders"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Показывает актуальные заказы пользователя";
+            description: "Принимает идентификатор пользователя и опционально количество последних заказов, которые требуется вывести";
+        };
+    }
+
+    rpc UserReturnsGrpc(UserReturnsRequest) returns (UserReturnsResponse){
+        option (google.api.http) = {
+            get: "/UserReturns"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Показывает все заказы, которые были возвращены в пункт выдачи";
+            description: "Принимает страницу и опционально размер страницы для паганиции";
         };
     }
 }
@@ -27,6 +132,13 @@ message OrderDto {
     int64 weight = 6;
     string packageType = 7;
     bool additionalStretch = 8;
+}
+
+message OrderId {
+    int64 id = 1 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
 }
 
 message AcceptOrderRequest{
@@ -66,5 +178,65 @@ message AcceptOrderRequest{
 }
 
 message AcceptOrderResponse {
-    OrderDto order = 1;
 }
+
+message AcceptReturnRequest{
+    int64 id = 1 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    int64 userId = 2 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+}
+
+message AcceptReturnResponse{
+}
+
+message GiveOrderRequest{
+    repeated OrderId orderIds = 1;
+}
+
+message GiveOrderResponse{
+}
+
+message ReturnOrderRequest{
+    int64 id = 1 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+}
+
+message ReturnOrderResponse{
+}
+
+message UserOrdersRequest {
+    int64 userId = 1 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    int64 last = 2 [
+        (google.api.field_behavior) = OPTIONAL
+    ];
+}
+
+message UserOrdersResponse {
+    repeated OrderDto orderDtos = 1;
+}
+
+message UserReturnsRequest {
+    int64 page = 1 [
+        (validate.rules).int64.gt = 0, 
+        (google.api.field_behavior) = REQUIRED
+    ];
+    int64 size = 2 [
+        (google.api.field_behavior) = REQUIRED
+    ];
+}
+
+message UserReturnsResponse {
+    repeated OrderDto orderDtos = 1;
+}
+
+

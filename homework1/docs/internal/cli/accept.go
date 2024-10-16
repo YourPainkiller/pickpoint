@@ -2,17 +2,19 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"homework1/internal/dto"
-	"homework1/internal/usecase"
 	"homework1/internal/workerPool"
+	cliserver "homework1/pkg/cli/v1"
 
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const TIMELAYOUT = "2006-01-02"
 
-func initAcceptCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *cobra.Command {
+func initAcceptCmd(cliclient cliserver.CliClient, pool *workerPool.Pool) *cobra.Command {
 	// Команда для приема заказов от курьера. Обязательные флаги OrderId, UserId и ValidTime
 	var AcceptCmd = &cobra.Command{
 		Use:     "accept",
@@ -71,17 +73,26 @@ func initAcceptCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *co
 				PackageType:       pack,
 				AdditionalStretch: additionalStretch,
 			}
+			byteReq, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
 
-			ctx := context.Background()
+			grpcReq := &cliserver.AcceptOrderRequest{}
+			if err := protojson.Unmarshal(byteReq, grpcReq); err != nil {
+				return err
+			}
+
 			pool.SubmitTask(func() {
-				err := orderUseCase.Accept(ctx, request)
-				//time.Sleep(5 * time.Second) testing gracefull shutdown
-				if err != nil {
-					err = fmt.Errorf("error in accpeting order with id=%d: %v", request.Id, err)
-					fmt.Println(err)
-				} else {
-					fmt.Printf("Order with id=%d accepted\n", request.Id)
+				ctx := context.Background()
+				_, respErr := cliclient.AcceptOrderGrpc(ctx, grpcReq)
+				if respErr != nil {
+					fmt.Printf("error in accpeting order with id=%d: %v", request.Id, respErr)
+					return
 				}
+
+				fmt.Printf("Order with id=%d accepted\n", request.Id)
+				//time.Sleep(5 * time.Second) testing gracefull shutdown
 			})
 			if slow {
 				pool.GetTasksWg().Wait()

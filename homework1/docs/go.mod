@@ -6,6 +6,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/georgysavva/scany/v2 v2.1.3
+	github.com/go-chi/chi/v5 v5.1.0
 	github.com/gojuno/minimock/v3 v3.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
 	github.com/jackc/pgx/v5 v5.7.1

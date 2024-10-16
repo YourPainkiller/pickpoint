@@ -1,8 +1,12 @@
 OUT_PATH:=$(CURDIR)/pkg
 LOCAL_BIN:=$(CURDIR)/bin
 
-APP=cli.exe
-APP_EXECUTABLE="./cmd/$(APP)"
+APP1=client.exe
+APP_EXECUTABLE1="./cmd/client/$(APP1)"
+
+APP2=server.exe
+APP_EXECUTABLE2="./cmd/server/$(APP2)"
+
 SHELL := /bin/bash 
 
 set-gobin:
@@ -34,14 +38,35 @@ tidy:
 	go mod tidy
 
 
-build:
+# ---------------------------
+# Запуск сервера и клиента CLI 
+# ---------------------------
+build-client:
 	make lint
-	go build -o $(APP_EXECUTABLE) ./cmd/main.go
-	@echo "Build passed"
+	go build -o $(APP_EXECUTABLE1) ./cmd/client/main.go
+	@echo "Client Build passed"
 
-run: 
-	make build
-	$(APP_EXECUTABLE)
+run-client: 
+	make build-client
+	$(APP_EXECUTABLE1)
+
+build-server:
+	go build -o $(APP_EXECUTABLE2) ./cmd/server/server.go
+	@echo "Server Build passed"
+
+run-server: 
+	make build-server
+	$(APP_EXECUTABLE2)
+
+# ---------------------------
+# Установка зависимостей, генирация и запуск сервера
+# ---------------------------
+
+all:
+	@if [ -d vendor.protogen ]; then rm -rf vendor.protogen/*; fi
+	make bin-deps
+	make generate
+	make run-server
 
 test-int:
 	make compose-up

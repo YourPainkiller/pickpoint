@@ -2,15 +2,17 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"homework1/internal/dto"
-	"homework1/internal/usecase"
+	cliserver "homework1/pkg/cli/v1"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func initUserOrdersCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
+func initUserOrdersCmd(cliclient cliserver.CliClient) *cobra.Command {
 	// Команда для вывода заказов от клиента с пагинацией скроллом. Обязательный флаг UserId. Необязательный last --- количество последних по получению заказов для вывода
 	var userOrdersCmd = &cobra.Command{
 		Use:     "userOrders",
@@ -33,20 +35,31 @@ func initUserOrdersCmd(orderUseCase usecase.OrderUseCase) *cobra.Command {
 				UserId: userId,
 				Last:   last,
 			}
-
-			ctx := context.Background()
-			response, err := orderUseCase.UserOrders(ctx, request)
+			byteReq, err := json.Marshal(request)
 			if err != nil {
 				return err
 			}
 
-			if response == nil {
+			grpcReq := &cliserver.UserOrdersRequest{}
+			if err := protojson.Unmarshal(byteReq, grpcReq); err != nil {
+				return err
+			}
+
+			ctx := context.Background()
+			resp, respErr := cliclient.UserOrdersGrpc(ctx, grpcReq)
+			if respErr != nil {
+				return err
+			}
+
+			if resp == nil {
 				fmt.Println("empty")
 				return nil
 			}
 
+			//data, _ := protojson.Marshal(resp)
+
 			text := []string{}
-			for _, order := range response.Orders {
+			for _, order := range resp.GetOrderDtos() {
 				text = append(text, fmt.Sprintf("Order Id: %d, Valid untill: %s, State: %s", order.Id, order.ValidTime, order.State))
 			}
 
