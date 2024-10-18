@@ -13,6 +13,8 @@ import (
 
 const sameIdErrorCode = "23505"
 
+var ErrAlreadyInBase = errors.New("this order already in base")
+
 type PgRepository struct {
 	txManager TransactionManager
 }
@@ -29,7 +31,7 @@ func (r *PgRepository) AddOrder(ctx context.Context, req dto.OrderDto) error {
 	`, req.Id, req.UserId, req.ValidTime, req.State, req.Price, req.Weight, req.PackageType, req.AdditionalStretch)
 
 	if unwrapPgCode(err) == sameIdErrorCode {
-		return errors.New("this order already in base")
+		return ErrAlreadyInBase
 	}
 
 	if err != nil {

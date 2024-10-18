@@ -2,15 +2,17 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"homework1/internal/dto"
-	"homework1/internal/usecase"
 	"homework1/internal/workerPool"
+	cliserver "homework1/pkg/cli/v1"
 
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func initGiveCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *cobra.Command {
+func initGiveCmd(cliclient cliserver.CliClient, pool *workerPool.Pool) *cobra.Command {
 	// Команда для выдачи заказов клиенту. Обязательный флаг ListOfIds --- список Id заказов для выдачи
 	var giveCmd = &cobra.Command{
 		Use:     "give",
@@ -37,14 +39,24 @@ func initGiveCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *cobr
 				OrderIds: orderIds,
 			}
 
-			ctx := context.Background()
+			byteReq, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
+
+			grpcReq := &cliserver.GiveOrderRequest{}
+			if err := protojson.Unmarshal(byteReq, grpcReq); err != nil {
+				return err
+			}
+
 			pool.SubmitTask(func() {
-				err := orderUseCase.Give(ctx, request)
-				if err != nil {
-					fmt.Println(err)
-				} else {
-					fmt.Println("All of your orders given")
+				ctx := context.Background()
+				_, respErr := cliclient.GiveOrderGrpc(ctx, grpcReq)
+				if respErr != nil {
+					fmt.Println("error in giving orders:", respErr)
+					return
 				}
+				fmt.Println("All of your orders given")
 			})
 			if slow {
 				pool.GetTasksWg().Wait()

@@ -2,15 +2,17 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"homework1/internal/dto"
-	"homework1/internal/usecase"
 	"homework1/internal/workerPool"
+	cliserver "homework1/pkg/cli/v1"
 
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func initAcceptReturnCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Pool) *cobra.Command {
+func initAcceptReturnCmd(cliclient cliserver.CliClient, pool *workerPool.Pool) *cobra.Command {
 	// Команда для прием товара на возврат от клиента. Обязательные флаги UserId, OrderId
 	var acceptReturnCmd = &cobra.Command{
 		Use:     "acceptReturn",
@@ -39,15 +41,26 @@ func initAcceptReturnCmd(orderUseCase usecase.OrderUseCase, pool *workerPool.Poo
 				UserId: userId,
 			}
 
-			ctx := context.Background()
+			byteReq, err := json.Marshal(request)
+			if err != nil {
+				return err
+			}
+
+			grpcReq := &cliserver.AcceptReturnRequest{}
+			if err := protojson.Unmarshal(byteReq, grpcReq); err != nil {
+				return err
+			}
+
 			pool.SubmitTask(func() {
-				err := orderUseCase.AcceptReturn(ctx, request)
-				if err != nil {
+				ctx := context.Background()
+				_, respErr := cliclient.AcceptReturnGrpc(ctx, grpcReq)
+				if respErr != nil {
 					err = fmt.Errorf("error in accpeting return from userid=%d, orderid=%d: %v", request.UserId, request.Id, err)
 					fmt.Println(err)
-				} else {
-					fmt.Println("Return accepted succesfull")
+					return
 				}
+
+				fmt.Println("Return accepted succesfull")
 			})
 			if slow {
 				pool.GetTasksWg().Wait()
