@@ -2,17 +2,21 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"homework1/internal/domain"
 	"homework1/internal/domain/strategy"
 	"homework1/internal/dto"
+	"homework1/internal/infra/kafka/producer"
 	"homework1/internal/repository"
 	"homework1/internal/repository/postgres"
 	cliserver "homework1/pkg/cli/v1"
 	"log"
+	"strconv"
 	"time"
 
+	"github.com/IBM/sarama"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -30,10 +34,11 @@ type OrderUseCase struct {
 	repo           orderRepository
 	psqlRepoFacade repository.Facade
 	cliserver.UnimplementedCliServer
+	kafkaProducer sarama.SyncProducer
 }
 
-func NewOrderUseCase(repo orderRepository, psqlRepoFacade repository.Facade) *OrderUseCase {
-	return &OrderUseCase{repo: repo, psqlRepoFacade: psqlRepoFacade}
+func NewOrderUseCase(repo orderRepository, psqlRepoFacade repository.Facade, kafkaProducer sarama.SyncProducer) *OrderUseCase {
+	return &OrderUseCase{repo: repo, psqlRepoFacade: psqlRepoFacade, kafkaProducer: kafkaProducer}
 }
 
 func (oc *OrderUseCase) Accept(ctx context.Context, req *dto.AcceptOrderRequest) error {
@@ -94,6 +99,11 @@ func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.Acce
 			return nil, status.Error(codes.Internal, "Unkown Error")
 		}
 	}
+
+	msg := map[string]string{"id": strconv.Itoa(int(req.GetId())), "method": "AcceptOrder", "time": time.Now().Format(time.DateTime)}
+	byteMsg, _ := json.Marshal(msg)
+	producer.SendMessage(oc.kafkaProducer, int(req.GetUserId()), byteMsg, "pvz.events-log")
+
 	return &cliserver.AcceptOrderResponse{}, nil
 }
 

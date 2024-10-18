@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"homework1/internal/infra/kafka/producer"
 	"homework1/internal/mw"
 	"homework1/internal/repository"
 	"homework1/internal/repository/postgres"
@@ -11,7 +12,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/go-chi/chi/v5"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,7 +45,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	orderUseCase := usecase.NewOrderUseCase(orderRepository, storageFacade)
+	kafkaConfig := newConfig()
+	prod, err := producer.NewSyncProducer(kafkaConfig.kafka,
+		producer.WithIdempotent(),
+		producer.WithRequiredAcks(sarama.WaitForAll),
+		producer.WithMaxOpenRequests(1),
+		producer.WithMaxRetries(5),
+		producer.WithRetryBackoff(10*time.Millisecond),
+		// producer.WithProducerPartitioner(sarama.NewManualPartitioner),
+		// producer.WithProducerPartitioner(sarama.NewRoundRobinPartitioner),
+		// producer.WithProducerPartitioner(sarama.NewRandomPartitioner),
+		producer.WithProducerPartitioner(sarama.NewHashPartitioner), // default
+	)
+	if err != nil {
+		log.Fatal("Error in creating producer:", err)
+	}
+	defer prod.Close()
+
+	orderUseCase := usecase.NewOrderUseCase(orderRepository, storageFacade, prod)
 
 	lis, err := net.Listen("tcp", GrpcHost)
 	if err != nil {
