@@ -93,9 +93,9 @@ func TestKafka(t *testing.T) {
 	assert.NoError(t, err)
 
 	var (
-		wg   = &sync.WaitGroup{}
-		conf = newConfig()
-		ctx  = runSignalHandler(context.Background(), wg)
+		wg        = &sync.WaitGroup{}
+		conf      = newConfig()
+		ctx, cncl = runSignalHandler(context.Background(), wg)
 	)
 
 	cons, err := consumer.NewConsumer(conf,
@@ -104,26 +104,26 @@ func TestKafka(t *testing.T) {
 	assert.NoError(t, err)
 
 	defer cons.Close() // Не забываем освобождать ресурсы :)
-
+	dn := make(chan bool)
 	err = cons.ConsumeTopic(ctx, "pvz.events-log", func(msg *sarama.ConsumerMessage) {
-		// Your logic here
 		message := convertMsg(msg)
 		var event dto.EventDto
 		json.Unmarshal([]byte(message.Payload), &event)
 		assert.Equal(t, "AcceptOrder", event.Method)
-		assert.Equal(t, 0, event.OrderId)
+		assert.EqualValues(t, 1, event.OrderId)
+		dn <- true
 	}, wg)
 	msg := producer.CreateMessage(1, "AcceptOrder")
 	p, o, err2 := producer.SendMessage(prod, 0, msg, "pvz.events-log")
+	<-dn
+	cncl()
+	cons.Close()
 	assert.NoError(t, err2)
-	assert.Equal(t, 0, p)
-	assert.Equal(t, 0, o)
-	time.Sleep(2)
-	ctx.Done()
+	assert.EqualValues(t, 0, p)
+	assert.EqualValues(t, 0, o)
+	//ctx.Done()
 	assert.NoError(t, err)
-
 	wg.Wait()
-
 }
 
 func newConfig() kafka.Config {
@@ -134,7 +134,7 @@ func newConfig() kafka.Config {
 	}
 }
 
-func runSignalHandler(ctx context.Context, wg *sync.WaitGroup) context.Context {
+func runSignalHandler(ctx context.Context, wg *sync.WaitGroup) (context.Context, context.CancelFunc) {
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
 
@@ -168,7 +168,7 @@ func runSignalHandler(ctx context.Context, wg *sync.WaitGroup) context.Context {
 		}
 	}()
 
-	return sigCtx
+	return sigCtx, cancel
 }
 
 type Msg struct {
