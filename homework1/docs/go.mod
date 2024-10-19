@@ -3,6 +3,7 @@ module homework1
 go 1.22.3
 
 require (
+	github.com/IBM/sarama v1.43.3
 	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/georgysavva/scany/v2 v2.1.3
@@ -19,7 +20,6 @@ require (
 )
 
 require (
-	github.com/IBM/sarama v1.43.3 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect

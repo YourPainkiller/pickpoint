@@ -26,6 +26,7 @@ services:
     ports:
       - "5433:5432"
     restart: always
+  
   kafka-ui:
     container_name: route256-kafka-ui
     image: provectuslabs/kafka-ui:latest
@@ -63,3 +64,9 @@ services:
     command: "bash -c 'echo Waiting for Kafka to be ready... && \
       cub kafka-ready -b kafka0:29092 1 30 && \
       kafka-topics --create --topic pvz.events-log --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server kafka0:29092'"
+  
+  go-consumer-1:
+    container_name: route256-go-consumer-1
+    image: go-consumer-image
+    build:
+      dockerfile: ./Dockerfile

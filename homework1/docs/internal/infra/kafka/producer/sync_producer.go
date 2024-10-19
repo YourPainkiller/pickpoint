@@ -1,7 +1,9 @@
 package producer
 
 import (
+	"encoding/json"
 	"fmt"
+	"homework1/internal/dto"
 	"homework1/internal/infra/kafka"
 	"strconv"
 	"time"
@@ -36,4 +38,14 @@ func SendMessage(prod sarama.SyncProducer, key int, message []byte, topic string
 	}
 	partition, offset, err = prod.SendMessage(msg)
 	return partition, offset, err
+}
+
+func CreateMessage(id int, method string) []byte {
+	event := dto.EventDto{
+		OrderId: id,
+		Method:  method,
+		Time:    time.Now().Format(time.DateTime),
+	}
+	b, _ := json.Marshal(event)
+	return b
 }

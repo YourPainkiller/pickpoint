@@ -3,14 +3,14 @@ package main
 import "homework1/internal/infra/kafka"
 
 type config struct {
-	kafka kafka.Config
+	KafkaConfig kafka.Config
 }
 
-func newConfig() config {
+func newConfig(f flags) config {
 	return config{
-		kafka: kafka.Config{
+		KafkaConfig: kafka.Config{
 			Brokers: []string{
-				"localhost:9092",
+				f.bootstrapServer,
 			},
 		},
 	}

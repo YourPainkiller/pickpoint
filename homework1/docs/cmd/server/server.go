@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"homework1/internal/infra/kafka"
 	"homework1/internal/infra/kafka/producer"
 	"homework1/internal/mw"
 	"homework1/internal/repository"
@@ -46,7 +47,7 @@ func main() {
 	}
 
 	kafkaConfig := newConfig()
-	prod, err := producer.NewSyncProducer(kafkaConfig.kafka,
+	prod, err := producer.NewSyncProducer(kafkaConfig,
 		producer.WithIdempotent(),
 		producer.WithRequiredAcks(sarama.WaitForAll),
 		producer.WithMaxOpenRequests(1),
@@ -114,4 +115,12 @@ func newStorage(pool *pgxpool.Pool) repository.Facade {
 	txManager := postgres.NewTxManager(pool)
 	pgRepo := postgres.NewPgRepository(txManager)
 	return repository.NewStorageFacade(*pgRepo, txManager)
+}
+
+func newConfig() kafka.Config {
+	return kafka.Config{
+		Brokers: []string{
+			"localhost:9092",
+		},
+	}
 }

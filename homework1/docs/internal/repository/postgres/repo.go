@@ -13,6 +13,8 @@ import (
 
 const sameIdErrorCode = "23505"
 
+var ErrNoSuchOrderd = errors.New("no such orderd")
+
 var ErrAlreadyInBase = errors.New("this order already in base")
 
 type PgRepository struct {
@@ -50,8 +52,7 @@ func (r *PgRepository) GetOrderById(ctx context.Context, id int) (dto.OrderDto, 
 	`, id).Scan(&order.Id, &order.UserId, &order.ValidTime, &order.State, &order.Price, &order.Weight, &order.PackageType, &order.AdditionalStretch)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-
-		return dto.OrderDto{}, fmt.Errorf("no such order with id=%d", id)
+		return dto.OrderDto{}, fmt.Errorf("orderid=%d: %w", id, ErrNoSuchOrderd)
 	}
 	if err != nil {
 		return dto.OrderDto{}, err
