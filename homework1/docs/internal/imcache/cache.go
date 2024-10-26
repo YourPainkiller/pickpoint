@@ -30,7 +30,7 @@ func (c *TTLClient[K, V]) Get(key K) (V, bool) {
 	v, ok := c.data[key]
 
 	if ok && !v.Expired(time.Now()) {
-		//c.ll.MoveToFront()
+		c.ll.MoveToFront(v.keyLink)
 		return v.Value(), true
 	}
 	return (&Cached[V]{}).Value(), false
