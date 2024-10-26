@@ -36,7 +36,7 @@ func TestDb(t *testing.T) {
 
 	txManager := postgres.NewTxManager(pool)
 	pgRepo := postgres.NewPgRepository(txManager)
-	ttlOrdersCache := imcache.NewOrdersCache(60 * time.Second)
+	ttlOrdersCache := imcache.NewOrdersCache(60*time.Second, 1000)
 
 	storageFacade := repository.NewStorageFacade(*pgRepo, txManager, ttlOrdersCache)
 	err = storageFacade.DropTable(ctx)

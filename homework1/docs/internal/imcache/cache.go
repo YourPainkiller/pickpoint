@@ -17,15 +17,15 @@ func NewTTLClient[K comparable, V any](ttl time.Duration, size int) *TTLClient[K
 
 type TTLClient[K comparable, V any] struct {
 	ttl  time.Duration
-	lock sync.RWMutex
+	lock sync.Mutex
 	data map[K]*Cached[V]
 	ll   *list.List
 	size int
 }
 
 func (c *TTLClient[K, V]) Get(key K) (V, bool) {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 	v, ok := c.data[key]
 
