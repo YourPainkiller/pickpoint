@@ -43,17 +43,13 @@ func (c *TTLClient[K, V]) Set(key K, value V, now time.Time) {
 	v, ok := c.data[key]
 	if ok {
 		c.ll.MoveToFront(v.keyLink)
-		c.data[key].expiredAt = now.Add(c.ttl)
 	} else {
 		if c.ll.Len() == c.size {
-			backElem := c.ll.Back()
-			c.ll.Remove(backElem)
-			k := backElem.Value.(K)
+			k := c.ll.Remove(c.ll.Back()).(K)
 			delete(c.data, k)
 		}
-		link := c.ll.PushFront(list.Element{Value: key})
+		link := c.ll.PushFront(key)
 		wrapped := NewCached[V](now.Add(c.ttl), link, value)
 		c.data[key] = wrapped
 	}
-
 }

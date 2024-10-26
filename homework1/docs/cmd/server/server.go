@@ -32,6 +32,7 @@ const (
 	GrpcHost  = "localhost:7001"
 	HttpHost  = "localhost:7002"
 	AdminHost = "localhost:7003"
+	CacheSize = 1000
 )
 
 func main() {
@@ -120,7 +121,7 @@ func main() {
 func newStorage(pool *pgxpool.Pool) repository.Facade {
 	txManager := postgres.NewTxManager(pool)
 	pgRepo := postgres.NewPgRepository(txManager)
-	ttlOrdersCache := imcache.NewOrdersCache(60 * time.Second)
+	ttlOrdersCache := imcache.NewOrdersCache(10*time.Second, CacheSize)
 	return repository.NewStorageFacade(*pgRepo, txManager, ttlOrdersCache)
 }
 

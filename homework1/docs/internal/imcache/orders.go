@@ -8,9 +8,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-func NewOrdersCache(ttl time.Duration) *OrdersCache {
+func NewOrdersCache(ttl time.Duration, size int) *OrdersCache {
 	return &OrdersCache{
-		cli: NewTTLClient[int, *dto.OrderDto](ttl),
+		cli: NewTTLClient[int, *dto.OrderDto](ttl, size),
 	}
 }
 
