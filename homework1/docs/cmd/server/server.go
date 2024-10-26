@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"homework1/internal/imcache"
 	"homework1/internal/infra/kafka"
 	"homework1/internal/infra/kafka/producer"
 	"homework1/internal/mw"
@@ -19,6 +20,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -67,7 +69,7 @@ func main() {
 
 	lis, err := net.Listen("tcp", GrpcHost)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error in listning tcp:", err)
 	}
 
 	grpcServer := grpc.NewServer(
@@ -82,9 +84,8 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error in handling grpc:", err)
 	}
-	//log.Println("all good")
 
 	go func() {
 		r := chi.NewRouter()
@@ -99,14 +100,16 @@ func main() {
 			b, _ := os.ReadFile("./cmd/server/static/index.html")
 			w.Write(b)
 		})
+		r.Handle("/metrics", promhttp.Handler())
+
 		if err := http.ListenAndServe(HttpHost, r); err != nil {
-			log.Fatal(err)
+			log.Fatal("Error in listnign swagger", err)
 		}
 	}()
 
 	log.Printf("Listnig grpc on: %s and http on: %s", GrpcHost, HttpHost)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal(err)
+		log.Fatal("Error in serving grpc:", err)
 	}
 
 }
@@ -114,7 +117,8 @@ func main() {
 func newStorage(pool *pgxpool.Pool) repository.Facade {
 	txManager := postgres.NewTxManager(pool)
 	pgRepo := postgres.NewPgRepository(txManager)
-	return repository.NewStorageFacade(*pgRepo, txManager)
+	ttlOrdersCache := imcache.NewOrdersCache(60 * time.Second)
+	return repository.NewStorageFacade(*pgRepo, txManager, ttlOrdersCache)
 }
 
 func newConfig() kafka.Config {

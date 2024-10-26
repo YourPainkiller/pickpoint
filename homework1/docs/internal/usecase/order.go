@@ -8,6 +8,7 @@ import (
 	"homework1/internal/domain/strategy"
 	"homework1/internal/dto"
 	"homework1/internal/infra/kafka/producer"
+	"homework1/internal/metrics"
 	"homework1/internal/repository"
 	"homework1/internal/repository/postgres"
 	cliserver "homework1/pkg/cli/v1"
@@ -67,6 +68,7 @@ func (oc *OrderUseCase) Accept(ctx context.Context, req *dto.AcceptOrderRequest)
 
 func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.AcceptOrderRequest) (*cliserver.AcceptOrderResponse, error) {
 	if err := req.Validate(); err != nil {
+		metrics.IncBadRespByHandler("acceptOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -79,10 +81,13 @@ func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.Acce
 	case domain.TypeStretch:
 		opackageStrategy = strategy.StretchPackageStrategy{}
 	default:
+		metrics.IncBadRespByHandler("acceptOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("unknown box type: %s", req.PackageType))
 	}
+
 	newOrder, err := domain.NewOrder(int(req.GetId()), int(req.GetUserId()), int(req.GetPrice()), int(req.GetWeight()), req.GetValidTime(), "accepted", req.GetPackageType(), opackageStrategy, req.GetAdditionalStretch())
 	if err != nil {
+		metrics.IncBadRespByHandler("acceptOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -90,8 +95,10 @@ func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.Acce
 	if err != nil {
 		switch {
 		case errors.Is(err, postgres.ErrAlreadyInBase):
+			metrics.IncBadRespByHandler("acceptOrder", 3)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
+			metrics.IncBadRespByHandler("acceptOrder", 13)
 			log.Printf("UNKNOWN ERROR IN ACCEPTING ORDER: %s\n", err.Error())
 			return nil, status.Error(codes.Internal, "Unkown Error")
 		}
@@ -103,6 +110,9 @@ func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.Acce
 		log.Println("[SEND MESSAGE TO KAFKA]: ", err)
 	}
 	fmt.Println(p, o)
+
+	metrics.AddAcceptedOrder()
+	metrics.IncOkRespByHandler("acceptOrder")
 
 	return &cliserver.AcceptOrderResponse{}, nil
 }
@@ -133,26 +143,31 @@ func (oc *OrderUseCase) AcceptReturn(ctx context.Context, req *dto.AcceptReturnO
 
 func (oc *OrderUseCase) AcceptReturnGrpc(ctx context.Context, req *cliserver.AcceptReturnRequest) (*cliserver.AcceptReturnResponse, error) {
 	if err := req.Validate(); err != nil {
+		metrics.IncBadRespByHandler("acceptReturn", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	order, err := oc.psqlRepoFacade.GetOrderById(ctx, int(req.GetId()))
 	if err != nil {
 		log.Printf("UNKNOWN ERROR IN ACCEPT RETURN %s\n", err.Error())
+		metrics.IncBadRespByHandler("acceptReturn", 13)
 		return nil, status.Error(codes.Internal, "Unkown Error")
 	}
 
 	if order.UserId != int(req.GetUserId()) {
+		metrics.IncBadRespByHandler("acceptReturn", 3)
 		return nil, status.Error(codes.InvalidArgument, "Not your order")
 	}
 
 	if order.State != "gived" {
+		metrics.IncBadRespByHandler("acceptReturn", 3)
 		return nil, status.Error(codes.InvalidArgument, "Your order already returned or still not gived")
 	}
 
 	orderTime, _ := time.Parse(TIMELAYOUT, order.ValidTime)
 	curTime := time.Now()
 	if curTime.After(orderTime) {
+		metrics.IncBadRespByHandler("acceptReturn", 3)
 		return nil, status.Error(codes.InvalidArgument, "No time to return")
 	}
 
@@ -160,6 +175,7 @@ func (oc *OrderUseCase) AcceptReturnGrpc(ctx context.Context, req *cliserver.Acc
 	err = oc.psqlRepoFacade.UpdateOrderInfo(ctx, order)
 	if err != nil {
 		log.Printf("UNKOWN ERROR IN ACCEPT RETURN %s\n", err.Error())
+		metrics.IncBadRespByHandler("acceptReturn", 13)
 		return nil, status.Error(codes.Internal, "Unkown Error")
 	}
 
@@ -170,6 +186,7 @@ func (oc *OrderUseCase) AcceptReturnGrpc(ctx context.Context, req *cliserver.Acc
 	}
 	fmt.Println(p, o)
 
+	metrics.IncOkRespByHandler("acceptReturn")
 	return &cliserver.AcceptReturnResponse{}, nil
 }
 
@@ -215,6 +232,7 @@ func (oc *OrderUseCase) Give(ctx context.Context, req *dto.GiveOrderRequest) err
 
 func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOrderRequest) (*cliserver.GiveOrderResponse, error) {
 	if err := req.Validate(); err != nil {
+		metrics.IncBadRespByHandler("giveOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -223,26 +241,31 @@ func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOr
 	for _, id := range req.GetOrderIds() {
 		order, err := oc.psqlRepoFacade.GetOrderById(ctx, int(id.GetId()))
 		if errors.Is(err, postgres.ErrNoSuchOrderd) {
+			metrics.IncBadRespByHandler("giveOrder", 3)
 			return nil, status.Error(codes.InvalidArgument, "no such order with")
 		}
 		if err != nil {
 			log.Printf("UNKNOWN ERROR IN GIVING OREDER: %s", err.Error())
+			metrics.IncBadRespByHandler("giveOrder", 13)
 			return nil, status.Error(codes.Internal, "unkown error")
 		}
 
 		if uniqueUserIds == 0 {
 			uniqueUserIds = order.UserId
 		} else if uniqueUserIds != order.UserId {
+			metrics.IncBadRespByHandler("giveOrder", 3)
 			return nil, status.Error(codes.InvalidArgument, "one of orders is not yours")
 		}
 
 		if order.State != "accepted" {
+			metrics.IncBadRespByHandler("giveOrder", 3)
 			return nil, status.Error(codes.InvalidArgument, "order with id  can't be taken, because it has been already taken or still didn't come")
 		}
 
 		curTime := time.Now()
 		orderTime, _ := time.Parse(TIMELAYOUT, order.ValidTime)
 		if curTime.After(orderTime) {
+			metrics.IncBadRespByHandler("giveOrder", 3)
 			return nil, status.Error(codes.InvalidArgument, "order with id can't be taken, because time left")
 		}
 		AllOrders = append(AllOrders, order)
@@ -256,6 +279,7 @@ func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOr
 		err := oc.psqlRepoFacade.UpdateOrderInfo(ctx, order)
 		if err != nil {
 			log.Printf("UNKOWN ERROR IN GIVING OREDER: %s", err.Error())
+			metrics.IncBadRespByHandler("giveOrder", 13)
 			return nil, status.Error(codes.Internal, "unkown error")
 		}
 		msg := producer.CreateMessage(int(order.Id), "GiveOrder")
@@ -265,6 +289,7 @@ func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOr
 		}
 		fmt.Println(p, o)
 	}
+	metrics.IncOkRespByHandler("giveOrder")
 	return &cliserver.GiveOrderResponse{}, nil
 }
 
@@ -296,22 +321,26 @@ func (oc *OrderUseCase) Return(ctx context.Context, req *dto.ReturnOrderRequest)
 
 func (oc *OrderUseCase) ReturnOrderGrpc(ctx context.Context, req *cliserver.ReturnOrderRequest) (*cliserver.ReturnOrderResponse, error) {
 	if err := req.Validate(); err != nil {
+		metrics.IncBadRespByHandler("returnOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	order, err := oc.psqlRepoFacade.GetOrderById(ctx, int(req.GetId()))
 	if err != nil {
 		log.Printf("UNKNOWN ERROR IN RETURNING OREDER: %s", err.Error())
+		metrics.IncBadRespByHandler("returnOrder", 13)
 		return nil, status.Error(codes.Internal, "unkown error")
 	}
 
 	if order.State == "gived" {
+		metrics.IncBadRespByHandler("returnOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, "this order is with the client")
 	}
 
 	curTime := time.Now().Add(24 * time.Hour)
 	orderTime, _ := time.Parse(TIMELAYOUT, order.ValidTime)
 	if curTime.Before(orderTime) && order.State == "accepted" {
+		metrics.IncBadRespByHandler("returnOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, "client still can take it")
 	}
 
@@ -320,6 +349,7 @@ func (oc *OrderUseCase) ReturnOrderGrpc(ctx context.Context, req *cliserver.Retu
 
 	if err != nil {
 		log.Printf("UNKNOWN ERROR IN RETURNING OREDER: %s", err.Error())
+		metrics.IncBadRespByHandler("returnOrder", 13)
 		return nil, status.Error(codes.Internal, "unkown error")
 	}
 
@@ -330,6 +360,7 @@ func (oc *OrderUseCase) ReturnOrderGrpc(ctx context.Context, req *cliserver.Retu
 	}
 	fmt.Println(p, o)
 
+	metrics.IncOkRespByHandler("returnOrder")
 	return &cliserver.ReturnOrderResponse{}, nil
 }
 
@@ -361,12 +392,14 @@ func (oc *OrderUseCase) UserOrders(ctx context.Context, req *dto.UserOrdersReque
 
 func (oc *OrderUseCase) UserOrdersGrpc(ctx context.Context, req *cliserver.UserOrdersRequest) (*cliserver.UserOrdersResponse, error) {
 	if err := req.Validate(); err != nil {
+		metrics.IncBadRespByHandler("userOrders", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	orders, err := oc.psqlRepoFacade.GetOrdersByUserId(ctx, int(req.GetUserId()))
 	if err != nil {
 		log.Printf("UNKNOWN ERROR IN USER ORDERS: %s", err.Error())
+		metrics.IncBadRespByHandler("userOrders", 13)
 		return nil, status.Error(codes.Internal, "unkown error")
 	}
 	var userOrders []dto.OrderDto
@@ -377,8 +410,11 @@ func (oc *OrderUseCase) UserOrdersGrpc(ctx context.Context, req *cliserver.UserO
 		}
 	}
 	if len(userOrders) == 0 {
+		metrics.IncOkRespByHandler("userOrders")
 		return nil, nil
 	}
+
+	metrics.IncOkRespByHandler("userOrders")
 	if req.GetLast() < 1 {
 		resp := &cliserver.UserOrdersResponse{
 			OrderDtos: make([]*cliserver.OrderDto, 0, len(userOrders)),
@@ -448,16 +484,19 @@ func (oc *OrderUseCase) UserReturns(ctx context.Context, req *dto.UserReturnsReq
 
 func (oc *OrderUseCase) UserReturnsGrpc(ctx context.Context, req *cliserver.UserReturnsRequest) (*cliserver.UserReturnsResponse, error) {
 	if err := req.Validate(); err != nil {
+		metrics.IncBadRespByHandler("userReturns", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	orders, err := oc.psqlRepoFacade.GetUserReturns(ctx)
 	if err != nil {
 		log.Printf("UNKNOWN ERROR IN USER RETURNS: %s", err.Error())
+		metrics.IncBadRespByHandler("userReturns", 13)
 		return nil, status.Error(codes.Internal, "unkown error")
 	}
 
 	if len(orders.Orders) == 0 {
+		metrics.IncOkRespByHandler("userReturns")
 		return nil, nil
 	}
 
@@ -467,9 +506,11 @@ func (oc *OrderUseCase) UserReturnsGrpc(ctx context.Context, req *cliserver.User
 	}
 
 	if int(req.GetPage()) > totalPages {
+		metrics.IncOkRespByHandler("userReturns")
 		return nil, nil
 	}
 
+	metrics.IncOkRespByHandler("userReturns")
 	pagexsize := int(req.GetPage()) * int(req.GetSize())
 	pagem1xsize := (int(req.GetPage()) - 1) * int(req.GetSize())
 	if pagexsize >= len(orders.Orders) {
@@ -489,8 +530,6 @@ func (oc *OrderUseCase) UserReturnsGrpc(ctx context.Context, req *cliserver.User
 			})
 		}
 		return resp, nil
-		//return &dto.UserReturnsResponse{ListOrdersDto: dto.ListOrdersDto{Orders: orders.Orders[(req.Page-1)*req.Size:]}}, nil
-
 	} else {
 		resp := &cliserver.UserReturnsResponse{
 			OrderDtos: make([]*cliserver.OrderDto, 0, pagexsize-pagem1xsize+1),
@@ -508,6 +547,5 @@ func (oc *OrderUseCase) UserReturnsGrpc(ctx context.Context, req *cliserver.User
 			})
 		}
 		return resp, nil
-		//return &dto.UserReturnsResponse{ListOrdersDto: dto.ListOrdersDto{Orders: orders.Orders[(req.Page-1)*req.Size : req.Page*req.Size]}}, nil
 	}
 }

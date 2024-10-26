@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"homework1/internal/cli"
 	"homework1/internal/dto"
+	"homework1/internal/imcache"
 	"homework1/internal/infra/kafka"
 	"homework1/internal/infra/kafka/consumer"
 	"homework1/internal/infra/kafka/producer"
@@ -35,8 +36,9 @@ func TestDb(t *testing.T) {
 
 	txManager := postgres.NewTxManager(pool)
 	pgRepo := postgres.NewPgRepository(txManager)
+	ttlOrdersCache := imcache.NewOrdersCache(60 * time.Second)
 
-	storageFacade := repository.NewStorageFacade(*pgRepo, txManager)
+	storageFacade := repository.NewStorageFacade(*pgRepo, txManager, ttlOrdersCache)
 	err = storageFacade.DropTable(ctx)
 	require.NoError(t, err)
 
