@@ -7,12 +7,14 @@ import (
 	"homework1/internal/domain"
 	"homework1/internal/domain/strategy"
 	"homework1/internal/dto"
+	"homework1/internal/infra/kafka/producer"
 	"homework1/internal/repository"
 	"homework1/internal/repository/postgres"
 	cliserver "homework1/pkg/cli/v1"
 	"log"
 	"time"
 
+	"github.com/IBM/sarama"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -30,10 +32,11 @@ type OrderUseCase struct {
 	repo           orderRepository
 	psqlRepoFacade repository.Facade
 	cliserver.UnimplementedCliServer
+	kafkaProducer sarama.SyncProducer
 }
 
-func NewOrderUseCase(repo orderRepository, psqlRepoFacade repository.Facade) *OrderUseCase {
-	return &OrderUseCase{repo: repo, psqlRepoFacade: psqlRepoFacade}
+func NewOrderUseCase(repo orderRepository, psqlRepoFacade repository.Facade, kafkaProducer sarama.SyncProducer) *OrderUseCase {
+	return &OrderUseCase{repo: repo, psqlRepoFacade: psqlRepoFacade, kafkaProducer: kafkaProducer}
 }
 
 func (oc *OrderUseCase) Accept(ctx context.Context, req *dto.AcceptOrderRequest) error {
@@ -78,7 +81,6 @@ func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.Acce
 	default:
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("unknown box type: %s", req.PackageType))
 	}
-
 	newOrder, err := domain.NewOrder(int(req.GetId()), int(req.GetUserId()), int(req.GetPrice()), int(req.GetWeight()), req.GetValidTime(), "accepted", req.GetPackageType(), opackageStrategy, req.GetAdditionalStretch())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -90,10 +92,18 @@ func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.Acce
 		case errors.Is(err, postgres.ErrAlreadyInBase):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
-			log.Printf("UNKNOWN ERROR IN ACCEPTING ORDER: %s", err.Error())
+			log.Printf("UNKNOWN ERROR IN ACCEPTING ORDER: %s\n", err.Error())
 			return nil, status.Error(codes.Internal, "Unkown Error")
 		}
 	}
+
+	msg := producer.CreateMessage(int(req.GetId()), "AcceptOrder")
+	p, o, err := producer.SendMessage(oc.kafkaProducer, int(req.GetUserId()), msg, "pvz.events-log")
+	if err != nil {
+		log.Println("[SEND MESSAGE TO KAFKA]: ", err)
+	}
+	fmt.Println(p, o)
+
 	return &cliserver.AcceptOrderResponse{}, nil
 }
 
@@ -128,7 +138,7 @@ func (oc *OrderUseCase) AcceptReturnGrpc(ctx context.Context, req *cliserver.Acc
 
 	order, err := oc.psqlRepoFacade.GetOrderById(ctx, int(req.GetId()))
 	if err != nil {
-		log.Printf("UNKNOWN ERROR IN ACCEPT RETURN %s", err.Error())
+		log.Printf("UNKNOWN ERROR IN ACCEPT RETURN %s\n", err.Error())
 		return nil, status.Error(codes.Internal, "Unkown Error")
 	}
 
@@ -149,9 +159,17 @@ func (oc *OrderUseCase) AcceptReturnGrpc(ctx context.Context, req *cliserver.Acc
 	order.State = "returned"
 	err = oc.psqlRepoFacade.UpdateOrderInfo(ctx, order)
 	if err != nil {
-		log.Printf("UNKOWN ERROR IN ACCEPT RETURN %s", err.Error())
+		log.Printf("UNKOWN ERROR IN ACCEPT RETURN %s\n", err.Error())
 		return nil, status.Error(codes.Internal, "Unkown Error")
 	}
+
+	msg := producer.CreateMessage(int(req.GetId()), "AcceptReturn")
+	p, o, err := producer.SendMessage(oc.kafkaProducer, int(req.GetUserId()), msg, "pvz.events-log")
+	if err != nil {
+		log.Println("[SEND MESSAGE TO KAFKA]: ", err)
+	}
+	fmt.Println(p, o)
+
 	return &cliserver.AcceptReturnResponse{}, nil
 }
 
@@ -204,6 +222,9 @@ func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOr
 	var uniqueUserIds int
 	for _, id := range req.GetOrderIds() {
 		order, err := oc.psqlRepoFacade.GetOrderById(ctx, int(id.GetId()))
+		if errors.Is(err, postgres.ErrNoSuchOrderd) {
+			return nil, status.Error(codes.InvalidArgument, "no such order with")
+		}
 		if err != nil {
 			log.Printf("UNKNOWN ERROR IN GIVING OREDER: %s", err.Error())
 			return nil, status.Error(codes.Internal, "unkown error")
@@ -237,6 +258,12 @@ func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOr
 			log.Printf("UNKOWN ERROR IN GIVING OREDER: %s", err.Error())
 			return nil, status.Error(codes.Internal, "unkown error")
 		}
+		msg := producer.CreateMessage(int(order.Id), "GiveOrder")
+		p, o, err := producer.SendMessage(oc.kafkaProducer, int(order.UserId), msg, "pvz.events-log")
+		if err != nil {
+			log.Println("[SEND MESSAGE TO KAFKA]: ", err)
+		}
+		fmt.Println(p, o)
 	}
 	return &cliserver.GiveOrderResponse{}, nil
 }
@@ -295,6 +322,13 @@ func (oc *OrderUseCase) ReturnOrderGrpc(ctx context.Context, req *cliserver.Retu
 		log.Printf("UNKNOWN ERROR IN RETURNING OREDER: %s", err.Error())
 		return nil, status.Error(codes.Internal, "unkown error")
 	}
+
+	msg := producer.CreateMessage(int(order.Id), "ReturnOrder")
+	p, o, err := producer.SendMessage(oc.kafkaProducer, int(order.UserId), msg, "pvz.events-log")
+	if err != nil {
+		log.Println("[SEND MESSAGE TO KAFKA]: ", err)
+	}
+	fmt.Println(p, o)
 
 	return &cliserver.ReturnOrderResponse{}, nil
 }
