@@ -8,6 +8,7 @@ import (
 	"homework1/internal/mw"
 	"homework1/internal/repository"
 	"homework1/internal/repository/postgres"
+	"homework1/internal/tracer"
 	"homework1/internal/usecase"
 	cliserver "homework1/pkg/cli/v1"
 	"log"
@@ -77,6 +78,8 @@ func main() {
 	)
 	reflection.Register(grpcServer)
 	cliserver.RegisterCliServer(grpcServer, orderUseCase)
+
+	tracer.MustSetup(ctx, "pvz")
 
 	mux := runtime.NewServeMux()
 	err = cliserver.RegisterCliHandlerFromEndpoint(ctx, mux, GrpcHost, []grpc.DialOption{

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -67,6 +68,9 @@ func (oc *OrderUseCase) Accept(ctx context.Context, req *dto.AcceptOrderRequest)
 }
 
 func (oc *OrderUseCase) AcceptOrderGrpc(ctx context.Context, req *cliserver.AcceptOrderRequest) (*cliserver.AcceptOrderResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.grpc.AcceptOrder")
+	defer span.Finish()
+
 	if err := req.Validate(); err != nil {
 		metrics.IncBadRespByHandler("acceptOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -142,6 +146,9 @@ func (oc *OrderUseCase) AcceptReturn(ctx context.Context, req *dto.AcceptReturnO
 }
 
 func (oc *OrderUseCase) AcceptReturnGrpc(ctx context.Context, req *cliserver.AcceptReturnRequest) (*cliserver.AcceptReturnResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.grpc.AcceptReturn")
+	defer span.Finish()
+
 	if err := req.Validate(); err != nil {
 		metrics.IncBadRespByHandler("acceptReturn", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -231,6 +238,9 @@ func (oc *OrderUseCase) Give(ctx context.Context, req *dto.GiveOrderRequest) err
 }
 
 func (oc *OrderUseCase) GiveOrderGrpc(ctx context.Context, req *cliserver.GiveOrderRequest) (*cliserver.GiveOrderResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.grpc.GiveOrder")
+	defer span.Finish()
+
 	if err := req.Validate(); err != nil {
 		metrics.IncBadRespByHandler("giveOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -320,6 +330,9 @@ func (oc *OrderUseCase) Return(ctx context.Context, req *dto.ReturnOrderRequest)
 }
 
 func (oc *OrderUseCase) ReturnOrderGrpc(ctx context.Context, req *cliserver.ReturnOrderRequest) (*cliserver.ReturnOrderResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.grpc.ReturnOrder")
+	defer span.Finish()
+
 	if err := req.Validate(); err != nil {
 		metrics.IncBadRespByHandler("returnOrder", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -391,6 +404,9 @@ func (oc *OrderUseCase) UserOrders(ctx context.Context, req *dto.UserOrdersReque
 }
 
 func (oc *OrderUseCase) UserOrdersGrpc(ctx context.Context, req *cliserver.UserOrdersRequest) (*cliserver.UserOrdersResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.grpc.UserOrders")
+	defer span.Finish()
+
 	if err := req.Validate(); err != nil {
 		metrics.IncBadRespByHandler("userOrders", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -483,6 +499,9 @@ func (oc *OrderUseCase) UserReturns(ctx context.Context, req *dto.UserReturnsReq
 }
 
 func (oc *OrderUseCase) UserReturnsGrpc(ctx context.Context, req *cliserver.UserReturnsRequest) (*cliserver.UserReturnsResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.grpc.UserReturns")
+	defer span.Finish()
+
 	if err := req.Validate(); err != nil {
 		metrics.IncBadRespByHandler("userReturns", 3)
 		return nil, status.Error(codes.InvalidArgument, err.Error())

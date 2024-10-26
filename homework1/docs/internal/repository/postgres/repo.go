@@ -9,6 +9,7 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/opentracing/opentracing-go"
 )
 
 const sameIdErrorCode = "23505"
@@ -26,6 +27,9 @@ func NewPgRepository(txManager TransactionManager) *PgRepository {
 }
 
 func (r *PgRepository) AddOrder(ctx context.Context, req dto.OrderDto) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.pgRepository.AddOrder")
+	defer span.Finish()
+
 	tx := r.txManager.GetQueryEngine(ctx)
 
 	_, err := tx.Exec(ctx, `
@@ -44,6 +48,9 @@ func (r *PgRepository) AddOrder(ctx context.Context, req dto.OrderDto) error {
 }
 
 func (r *PgRepository) GetOrderById(ctx context.Context, id int) (dto.OrderDto, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.pgRepository.GetOrderById")
+	defer span.Finish()
+
 	tx := r.txManager.GetQueryEngine(ctx)
 	var order dto.OrderDto
 
@@ -62,6 +69,9 @@ func (r *PgRepository) GetOrderById(ctx context.Context, id int) (dto.OrderDto, 
 }
 
 func (r *PgRepository) UpdateOrderInfo(ctx context.Context, req dto.OrderDto) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.pgRepository.UpdateOrder")
+	defer span.Finish()
+
 	tx := r.txManager.GetQueryEngine(ctx)
 
 	_, err := tx.Exec(ctx, `
@@ -76,6 +86,9 @@ func (r *PgRepository) UpdateOrderInfo(ctx context.Context, req dto.OrderDto) er
 }
 
 func (r *PgRepository) GetOrdersByUserId(ctx context.Context, userId int) (dto.UserOrdersResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.pgRepository.GetOrdersByUserId")
+	defer span.Finish()
+
 	var orders []dto.OrderDto
 	tx := r.txManager.GetQueryEngine(ctx)
 
@@ -89,6 +102,9 @@ func (r *PgRepository) GetOrdersByUserId(ctx context.Context, userId int) (dto.U
 }
 
 func (r *PgRepository) GetUserReturns(ctx context.Context) (dto.UserReturnsResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "service.pgRepository.GetUserReturns")
+	defer span.Finish()
+
 	var orders []dto.OrderDto
 	tx := r.txManager.GetQueryEngine(ctx)
 
